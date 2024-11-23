@@ -1,0 +1,11 @@
+fastapi==0.110.0
+uvicorn==0.27.1
+python-multipart==0.0.9
+openai==1.12.0
+python-dotenv==1.0.1
+matplotlib
+ipython
+bokeh
+pandas
+numpy
+seaborn
