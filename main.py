@@ -25,15 +25,13 @@ env_path = Path(__file__).resolve().parent / '.env'
 print("Looking for .env file at:", env_path)
 load_dotenv(env_path, verbose=True)
 print("Environment variables after loading:")
-print("SQLITE_DB_PATH:", os.getenv("SQLITE_DB_PATH"))
 
 # Add validation for required environment variables
 REQUIRED_ENV_VARS = [
     "AZURE_OPENAI_ENDPOINT",
     "AZURE_OPENAI_DEPLOYMENT_NAME",
     "AZURE_OPENAI_API_KEY",
-    "AZURE_OPENAI_API_VERSION",
-    "SQLITE_DB_PATH"
+    "AZURE_OPENAI_API_VERSION"
 ]
 
 # Validate environment variables at startup
@@ -209,15 +207,7 @@ async def chat(
         
         print(f"Final messages structure: {json.dumps(messages, indent=2)}")  # Debug print
         
-        # Add schema information to the user's message
-        db_schema = get_db_schema()
-        schema_context = (
-            "Available database tables and their schemas:\n" +
-            "\n".join([
-                f"- {table}: {', '.join(columns)}"
-                for table, columns in db_schema.items()
-            ])
-        )
+        
         
         enhanced_message = f"""
 Context: {schema_context}
@@ -271,33 +261,7 @@ If visualization is needed, include Python code using matplotlib/seaborn. db nam
                 "timestamp": int(datetime.now().timestamp() * 1000)
             })
  
-        # Add SQL execution capability in the execute_python_code function
-        if "```sql" in assistant_message:
-            sql_start = assistant_message.find("```sql") + 6
-            sql_end = assistant_message.find("```", sql_start)
-            sql_query = assistant_message[sql_start:sql_end].strip()
-            
-            try:
-                with get_db_connection() as conn:
-                    # Using pandas with SQLite connection
-                    df = pandas.read_sql_query(sql_query, conn)
-                    result = df.to_string()
-                    new_messages.append({
-                        "id": str(int(datetime.now().timestamp() * 1000)),
-                        "role": "python",
-                        "content": f"```\nQuery Results:\n{result}\n```",
-                        "timestamp": int(datetime.now().timestamp() * 1000)
-                    })
-            except Exception as e:
-                new_messages.append({
-                    "id": str(int(datetime.now().timestamp() * 1000)),
-                    "role": "python",
-                    "content": f"```\nError executing SQL query: {str(e)}\n```",
-                    "timestamp": int(datetime.now().timestamp() * 1000)
-                })
- 
-        return {"messages": new_messages}
- 
+       
     except Exception as e:
         print(f"Error in chat endpoint: {str(e)}")
         print(f"Error type: {type(e)}")
@@ -321,8 +285,6 @@ if __name__ == "__main__":
         # Validate environment variables before starting the server
         validate_env_vars()
         # Test database connection
-        with get_db_connection() as conn:
-            print("Successfully connected to database")
         print("Starting server on http://localhost:8000")
         uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
     except Exception as e:
