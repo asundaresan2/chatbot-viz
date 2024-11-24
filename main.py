@@ -63,44 +63,6 @@ model = AzureChatOpenAI(
     api_key=os.environ["AZURE_OPENAI_API_KEY"]
 )
 
-def get_db_connection():
-    """Returns a SQLite database connection with proper error handling"""
-    db_path = os.getenv("SQLITE_DB_PATH")
-    if not db_path:
-        raise ValueError("SQLITE_DB_PATH environment variable is not set")
-    if not os.path.exists(db_path):
-        raise FileNotFoundError(f"SQLite database file not found at: {db_path}")
-    try:
-        return sqlite3.connect(db_path)
-    except sqlite3.Error as e:
-        raise ConnectionError(f"Failed to connect to SQLite database: {str(e)}")
-
-def get_db_schema() -> Dict[str, List[str]]:
-    """Extracts schema information from SQLite database"""
-    schema = {}
-    try:
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            # Get all tables
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-            tables = cursor.fetchall()
-            
-            print("Found tables:", tables)  # Debug print
-            
-            for table in tables:
-                table_name = table[0]
-                quoted_table_name = f'"{table_name}"'
-                print(f"Processing table: {quoted_table_name}")  # Debug print
-                
-                cursor.execute(f"PRAGMA table_info({quoted_table_name});")
-                columns = cursor.fetchall()
-                schema[table_name] = [col[1] for col in columns]
-                print(f"Columns for {table_name}:", schema[table_name])  # Debug print
-    except Exception as e:
-        print(f"Error getting schema: {str(e)}")
-        raise
-    return schema
- 
 class Message(BaseModel):
     id: str
     role: str
